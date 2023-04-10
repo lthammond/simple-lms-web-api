@@ -1,5 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using WebApi.Models;
+using Microsoft.EntityFrameworkCore;
+using SimpleLMSWebApi.Models;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SimpleLMSWebApi.Controllers
 {
@@ -7,46 +10,64 @@ namespace SimpleLMSWebApi.Controllers
     [ApiController]
     public class AssignmentController : Controller
     {
-        List<Assignment> assignments = new List<Assignment> {
-            new Assignment { ModuleId = 1, Id = 1, Name = "W1-A1", Grade = 95, DueDate = DateTime.Now},
-            new Assignment { ModuleId = 1, Id = 2, Name = "W1-A2", Grade = 100, DueDate = DateTime.Now},
-            new Assignment { ModuleId = 2, Id = 3, Name = "W2-A1", Grade = 91, DueDate = DateTime.Now},
-            new Assignment { ModuleId = 2, Id = 4, Name = "W2-A2", Grade = 79, DueDate = DateTime.Now},
-            new Assignment { ModuleId = 3, Id = 5, Name = "Exam-1", Grade = 85, DueDate = DateTime.Now}
-        };
+        private readonly DatabaseContext _context;
 
-        [HttpGet("GetAssignments")]
+        public AssignmentController(DatabaseContext context)
+        {
+            _context = context;
+        }
+
+        [HttpGet("GetAllAssignments")]
         public IEnumerable<Assignment> Index()
         {
-            return assignments;
+            return _context.Assignments.ToList();
+        }
+
+        [HttpGet("GetAssignmentsUnderModule")]
+        public IEnumerable<Assignment> GetAssignmentsUnderModule(int moduleId)
+        {
+            return _context.Assignments.Where(m => m.ModuleId == moduleId).ToList();
         }
 
         [HttpGet("GetAssignment")]
         public Assignment GetAssignment(int assignmentId)
         {
-            return assignments.Find(assignment => assignment.Id == assignmentId);
+            return _context.Assignments.Find(assignmentId);
         }
 
         [HttpPost("AddAssignment")]
         public IEnumerable<Assignment> AddAssignment(Assignment assignment)
         {
-            assignments.Add(assignment);
-            return assignments;
+            _context.Assignments.Add(assignment);
+            _context.SaveChanges();
+            return _context.Assignments.ToList();
         }
 
         [HttpPut("UpdateAssignment")]
         public IEnumerable<Assignment> UpdateAssignment(int oldAssignmentId, Assignment newAssignment)
         {
-            int index = assignments.FindIndex(assignment => assignment.Id == oldAssignmentId);
-            assignments[index] = newAssignment;
-            return assignments;
+            var assignment = _context.Assignments.Find(oldAssignmentId);
+            if (assignment != null)
+            {
+                assignment.ModuleId = newAssignment.ModuleId;
+                assignment.Name = newAssignment.Name;
+                assignment.Grade = newAssignment.Grade;
+                assignment.DueDate = newAssignment.DueDate;
+                _context.SaveChanges();
+            }
+            return _context.Assignments.ToList();
         }
 
         [HttpDelete("RemoveAssignment")]
         public IEnumerable<Assignment> RemoveAssignment(int assignmentId)
         {
-            assignments.RemoveAll(assignment => assignment.Id == assignmentId);
-            return assignments;
+            var assignment = _context.Assignments.Find(assignmentId);
+            if (assignment != null)
+            {
+                _context.Assignments.Remove(assignment);
+                _context.SaveChanges();
+            }
+            return _context.Assignments.ToList();
         }
     }
 }

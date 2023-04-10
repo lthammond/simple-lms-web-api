@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using WebApi.Models;
+using Microsoft.EntityFrameworkCore;
+using SimpleLMSWebApi.Models;
 
 namespace SimpleLMSWebApi.Controllers
 {
@@ -7,44 +8,61 @@ namespace SimpleLMSWebApi.Controllers
     [ApiController]
     public class ModuleController : Controller
     {
-        List<Module> modules = new List<Module> {
-            new Module { CourseId = 1, Id = 1, Name = "Perimeter" },
-            new Module { CourseId = 1, Id = 2, Name = "Area" },
-            new Module { CourseId = 1, Id= 3, Name = "Volume"}
-        };
+        private readonly DatabaseContext _context;
 
-        [HttpGet("GetModules")]
+        public ModuleController(DatabaseContext context)
+        {
+            _context = context;
+        }
+
+        [HttpGet("GetAllModules")]
         public IEnumerable<Module> Index()
         {
-            return modules;
+            return _context.Modules.ToList();
+        }
+
+        [HttpGet("GetModulesUnderCourse")]
+        public IEnumerable<Module> GetModulesUnderCourse(int courseId)
+        {
+            return _context.Modules.Where(m => m.CourseId == courseId).ToList();
         }
 
         [HttpGet("GetModule")]
         public Module GetModule(int moduleId)
         {
-            return modules.Find(module => module.Id == moduleId);
+            return _context.Modules.Find(moduleId);
         }
 
         [HttpPost("AddModule")]
         public IEnumerable<Module> AddModule(Module module)
         {
-            modules.Add(module);
-            return modules;
+            _context.Modules.Add(module);
+            _context.SaveChanges();
+            return _context.Modules.ToList();
         }
 
         [HttpPut("UpdateModule")]
         public IEnumerable<Module> UpdateModule(int oldModuleId, Module newModule)
         {
-            int index = modules.FindIndex(course => course.Id == oldModuleId);
-            modules[index] = newModule;
-            return modules;
+            var module = _context.Modules.Find(oldModuleId);
+            if (module != null)
+            {
+                module.Name = newModule.Name;
+                _context.SaveChanges();
+            }
+            return _context.Modules.ToList();
         }
 
         [HttpDelete("RemoveModule")]
         public IEnumerable<Module> RemoveModule(int moduleId)
         {
-            modules.RemoveAll(module => module.Id == moduleId);
-            return modules;
+            var module = _context.Modules.Find(moduleId);
+            if (module != null)
+            {
+                _context.Modules.Remove(module);
+                _context.SaveChanges();
+            }
+            return _context.Modules.ToList();
         }
     }
 }

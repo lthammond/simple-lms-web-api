@@ -1,4 +1,4 @@
-namespace WebApi.Models;
+namespace SimpleLMSWebApi.Models;
 
 public class Course
 {

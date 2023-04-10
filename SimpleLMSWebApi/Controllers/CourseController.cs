@@ -1,51 +1,64 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using WebApi.Models;
+using Microsoft.EntityFrameworkCore;
+using SimpleLMSWebApi.Models;
 
 namespace SimpleLMSWebApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CourseController : Controller
+    public class CourseController : ControllerBase
     {
-        List<Course> courses = new List<Course> {
-            new Course { Id = 1, Name = "Math"},
-            new Course { Id = 2, Name = "History"},
-            new Course { Id = 3, Name = "Science"},
-            new Course { Id = 4, Name = "English"}
-        };
+        private readonly DatabaseContext _context;
 
-        [HttpGet("GetCourses")]
+        public CourseController(DatabaseContext context)
+        {
+            _context = context;
+        }
+
+        [HttpGet("GetAllCourses")]
         public IEnumerable<Course> Index()
         {
-            return courses;
+            return _context.Courses.ToList();
         }
 
         [HttpGet("GetCourse")]
         public Course GetCourse(int courseId)
         {
-            return courses.Find(course => course.Id == courseId);
+            return _context.Courses.Find(courseId);
         }
 
         [HttpPost("AddCourse")]
-        public IEnumerable<Course> AddCourse(Course course)
+        public IActionResult AddCourse(Course course)
         {
-            courses.Add(course);
-            return courses;
+            _context.Courses.Add(course);
+            _context.SaveChanges();
+            return Ok();
         }
 
         [HttpPut("UpdateCourse")]
-        public IEnumerable<Course> UpdateCourse(int oldCourseId, Course newCourse)
+        public IActionResult UpdateCourse(int oldCourseId, Course newCourse)
         {
-            int index = courses.FindIndex(course => course.Id == oldCourseId);
-            courses[index] = newCourse;
-            return courses;
+            var course = _context.Courses.Find(oldCourseId);
+            if (course == null)
+            {
+                return NotFound();
+            }
+            course.Name = newCourse.Name;
+            _context.SaveChanges();
+            return Ok();
         }
 
         [HttpDelete("RemoveCourse")]
-        public IEnumerable<Course> RemoveCourse(int courseId)
+        public IActionResult RemoveCourse(int courseId)
         {
-            courses.RemoveAll(course => course.Id == courseId);
-            return courses;
+            var course = _context.Courses.Find(courseId);
+            if (course == null)
+            {
+                return NotFound();
+            }
+            _context.Courses.Remove(course);
+            _context.SaveChanges();
+            return Ok();
         }
     }
 }
